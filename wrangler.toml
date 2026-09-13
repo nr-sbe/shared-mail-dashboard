@@ -1,0 +1,23 @@
+name = "shared-mail"
+main = "worker/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGIN = "https://nr-sbe.github.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "shared-mail"
+database_id = "REPLACE_WITH_CREATED_DATABASE_ID"
+migrations_dir = "migrations"
+
+[triggers]
+crons = ["0 * * * *"]
+
+[observability]
+enabled = true
+
+[limits]
+cpu_ms = 10

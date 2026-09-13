@@ -1,0 +1,35 @@
+{
+  "name": "shared-mail-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "dev:demo": "vite --host 127.0.0.1 --mode demo",
+    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.worker.json && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "vitest run",
+    "worker:dev": "wrangler dev",
+    "worker:check": "wrangler deploy --dry-run --outdir .worker-build",
+    "worker:deploy": "wrangler deploy",
+    "db:local": "wrangler d1 migrations apply shared-mail --local",
+    "db:remote": "wrangler d1 migrations apply shared-mail --remote",
+    "source:add": "node scripts/source.mjs",
+    "message:remove": "node scripts/remove-message.mjs"
+  },
+  "dependencies": {
+    "html-to-text": "^10.0.1",
+    "resend": "^6.28.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260911.1",
+    "@types/html-to-text": "^9.0.4",
+    "@types/node": "^22.20.2",
+    "esbuild": "^0.28.2",
+    "miniflare": "5.20260911.0-alpha",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0",
+    "wrangler": "^4.131.1"
+  }
+}

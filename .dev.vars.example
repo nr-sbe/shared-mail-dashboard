@@ -1,0 +1,3 @@
+RESEND_API_KEY=re_replace_locally
+RESEND_WEBHOOK_SECRET=whsec_replace_locally
+SOURCES_JSON=[{"id":"operations","label":"Operations","address":"random-secret@YOUR-DOMAIN.resend.app","active":false,"activeSince":null}]
