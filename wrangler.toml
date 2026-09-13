@@ -1,4 +1,5 @@
 name = "shared-mail"
+account_id = "50dc1cb36a6965ac87fe3b41ce35d911"
 main = "worker/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
@@ -10,7 +11,7 @@ ALLOWED_ORIGIN = "https://nr-sbe.github.io"
 [[d1_databases]]
 binding = "DB"
 database_name = "shared-mail"
-database_id = "REPLACE_WITH_CREATED_DATABASE_ID"
+database_id = "805d1259-ad69-4ae7-82fa-3192e36d890c"
 migrations_dir = "migrations"
 
 [triggers]

@@ -34,6 +34,7 @@ let sourceId = '';
 let query = '';
 let busy = false;
 let loaded = false;
+let connectionFailed = false;
 let lastSync: Date | null = null;
 let clockOffset = 0;
 let expiryTimer: ReturnType<typeof setTimeout> | undefined;
@@ -73,7 +74,8 @@ function renderReader() {
   const reader = el('reading-pane');
   const m = feed.messages.find(m => m.id === selectedId);
   if (!m) {
-    reader.replaceChildren(node('div', 'reader-empty', loaded ? 'Select a message to read it here.' : 'Your shared inbox is loading…'));
+    reader.replaceChildren(node('div', 'reader-empty', loaded ? 'Select a message to read it here.' : connectionFailed ? 'Messages will appear once the inbox is connected.' : 'Your shared inbox is loading…'));
+    delete reader.dataset.messageId;
     return;
   }
   const head = node('div', 'reader-head');
@@ -139,8 +141,8 @@ function render() {
   }
   if (!visible.length) {
     const empty = node('div', 'list-empty');
-    empty.append(node('div', 'empty-symbol', '✉'), node('h2', '', query || sourceId ? 'No matching messages' : loaded ? 'You’re all caught up' : 'Connecting your inbox'),
-      node('p', '', query || sourceId ? 'Try another search or choose all sources.' : 'New matching emails will appear here automatically.'));
+    empty.append(node('div', 'empty-symbol', '✉'), node('h2', '', query || sourceId ? 'No matching messages' : loaded ? 'You’re all caught up' : connectionFailed ? 'Inbox not connected' : 'Connecting your inbox'),
+      node('p', '', query || sourceId ? 'Try another search or choose all sources.' : connectionFailed && !loaded ? 'Refresh after the connection is restored.' : 'New matching emails will appear here automatically.'));
     list.append(empty);
   }
   // Preserve body selection and scroll when a background refresh changes other mail.
@@ -178,11 +180,12 @@ async function refresh() {
     }
     if (!validFeed(data)) throw new Error('The inbox returned an unexpected response. Please try again.');
     clockOffset = Date.parse(data.serverTime) - Date.now();
-    feed = data; loaded = true; lastSync = new Date();
+    feed = data; loaded = true; connectionFailed = false; lastSync = new Date();
     if (sourceId && !feed.sources.some(s => s.id === sourceId)) sourceId = '';
     el('error').hidden = true;
     el('sync-status').textContent = `Updated ${lastSync.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · Auto-refresh on`;
   } catch (error) {
+    connectionFailed = true;
     el('error').textContent = error instanceof Error ? error.message : 'Could not refresh mail.';
     el('error').hidden = false;
     el('sync-status').textContent = lastSync ? `Refresh failed · Last updated ${lastSync.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Not connected';
