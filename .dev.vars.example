@@ -1,3 +1,5 @@
 RESEND_API_KEY=re_replace_locally
 RESEND_WEBHOOK_SECRET=whsec_replace_locally
+DASHBOARD_PASSWORD=replace-with-a-long-shared-password
+DASHBOARD_SESSION_KEY=replace-with-an-independent-random-secret
 SOURCES_JSON=[{"id":"operations","label":"Operations","address":"random-secret@YOUR-DOMAIN.resend.app","active":false,"activeSince":null}]

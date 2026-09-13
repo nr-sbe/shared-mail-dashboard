@@ -2,7 +2,7 @@
 
 Use Gmail on a **computer**. Get your assigned forwarding address from the administrator first. Each owner performs all Gmail changes in their own account.
 
-The dashboard is public, and matching email text and sender details are visible to anyone. Gmail setup-confirmation messages are excluded. Attachments do not appear on the dashboard.
+The dashboard requires a shared password from Nawvid. Matching email text and sender details are visible to everyone with that password. Gmail setup-confirmation messages are excluded. Attachments do not appear on the dashboard.
 
 ## Step 1 — Confirm your forwarding address
 
@@ -30,7 +30,7 @@ Keep **Disable forwarding** selected in Gmail's main Forwarding settings. The se
 ```
 
 6. Leave the other fields, including **From**, **To**, and **Subject**, empty. Leave **Has attachment** unchecked.
-7. Click **Search** at the bottom of the box. Look over the matching emails: these are the kinds of new messages the filter will share. If any are unsuitable for the public dashboard, stop and ask the administrator to help narrow the rule.
+7. Click **Search** at the bottom of the box. Look over the matching emails: these are the kinds of new messages the filter will share. If any are unsuitable for everyone with the dashboard password, stop and ask the administrator to help narrow the rule.
 
 This rule matches a listed streaming name. **Do not add “verification code” by itself.** Matching streaming messages can include sign-in codes, billing messages, and notices.
 
@@ -53,7 +53,7 @@ If **Forward it to** is unavailable or your address is missing, finish Step 1, r
 
 1. Make sure the administrator has activated your dashboard source.
 2. Ask someone using another email address to send you a new message with the subject **Netflix shared inbox test** and the body **Test only**.
-3. Open [Shared Mail](https://nr-sbe.github.io/shared-mail-dashboard/) and click **Refresh**. Allow 5–10 minutes for delivery.
+3. Open [Shared Mail](https://nr-sbe.github.io/shared-mail-dashboard/), enter the shared password from Nawvid if prompted, and click **Refresh**. Allow 5–10 minutes for delivery.
 4. Check that the test appears under your dashboard label. Tell the administrator whether it arrived.
 
 Old emails do not get imported by this filter. Leave general inbox forwarding disabled; your new filter does the forwarding. The dashboard refreshes every minute while open and removes messages after 72 hours. Originals stay in Gmail.

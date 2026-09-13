@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&display=swap');
+.sign-out{padding:7px 10px;background:white;border:1px solid #dce3ea;border-radius:5px;font-size:13px;white-space:nowrap}
 
 :root{font-family:'DM Sans',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#152c42;background:#f4f6f8;font-synthesis:none;line-height:1.5;font-size:16px;font-weight:400;--muted:#667687;--line:#e2e7ec;--navy:#102438;--blue:#145dc0}
 *{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:wait;opacity:.65}button,input,select,a{outline-offset:4px}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #2376d8}button{color:inherit}svg{width:22px;height:22px;flex-shrink:0}a{color:#155fae}button{border:0}p,h1,h2{margin:0}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.skip-link{position:fixed;top:-100px;left:20px;background:white;padding:12px;z-index:20}.skip-link:focus{top:10px}
@@ -9,3 +9,22 @@ main{padding:39px 38px 16px;min-width:0;max-width:1760px;width:100%;margin:auto}
 @media(max-width:800px){#app{display:block}.sidebar{position:static;height:auto;padding:17px 21px;display:block}.brand{font-size:22px}.sidebar .workspace-label,.sidebar .all-mail,.sidebar .source-heading,.sidebar .sources,.sidebar-bottom{display:none}main{padding:23px 20px 16px}.page-header{margin-bottom:23px}h1{font-size:30px}.eyebrow{display:none}.header-meta{align-self:flex-start;padding-top:7px}.mail-workspace{display:block;height:auto;min-height:480px}.message-list{border-right:0}.reader{display:none}.reader-open .message-list{display:none}.reader-open .reader{display:block}.back{display:block;background:transparent;color:#2867a3;font-size:14px;padding:18px 23px 0}#reading-pane{padding:24px;overflow:visible}.message-card{padding:20px}.message-preview{-webkit-line-clamp:1}.message-sender{font-size:13px}.message-subject{font-size:16px}.mobile-source{display:block;max-width:145px}.mobile-source select{height:46px;width:100%;border:1px solid #dce3ea;border-radius:7px;color:#526779;font-size:14px;background:white;padding:0 10px}.refresh{padding:0 12px}.refresh span{display:none}.feed-meta{flex-wrap:wrap;gap:4px}.reader-empty{min-height:380px}footer span{display:none}}
 @media(max-width:450px){main{padding:21px 13px 14px}.toolbar{gap:7px}.search{padding:0 10px;gap:6px}.search input{font-size:14px}.search svg{width:17px}.mobile-source{max-width:112px}.mobile-source select{padding:0 5px;font-size:13px}.refresh{padding:0 10px}.public-badge{font-size:12px}.subtitle{font-size:13px}#reading-pane{padding:22px}.reader-date{max-width:115px}.feed-meta{font-size:12px}.brand{padding:0}.message-body{font-size:16px}.reader-head{gap:7px}h2{font-size:23px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+@media(max-width:800px){
+  .header-meta{flex-wrap:wrap;justify-content:flex-end;gap:6px}
+  .sign-out{min-height:44px;min-width:72px;font-size:14px}
+  .search input,.mobile-source select{font-size:16px}
+  .refresh{min-width:44px;min-height:46px;justify-content:center}
+  .back{min-height:48px;padding:14px 20px}
+  .reader-open .reader{min-height:calc(100dvh - 220px)}
+  .mail-workspace{min-height:calc(100dvh - 290px)}
+  .message-body{font-size:16px;line-height:1.7}
+  main{padding-bottom:max(18px,env(safe-area-inset-bottom))}
+}
+@media(max-width:450px){
+  .page-header{align-items:flex-start;gap:10px}.header-meta{max-width:145px;padding-top:0}
+  .toolbar{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:8px}
+  .search{grid-column:1 / -1}.mobile-source{max-width:none;grid-column:1;grid-row:2}
+  .mobile-source select{width:100%;padding:0 12px}.refresh{grid-column:2;grid-row:2}
+  .feed-meta{padding-top:12px}.reader-head{align-items:flex-start}
+  #reading-pane{padding:20px 16px}.message-card{padding:18px 16px}
+}

@@ -16,7 +16,7 @@ pnpm exec wrangler login
 pnpm exec wrangler d1 create shared-mail
 ```
 
-Copy the returned database ID into `wrangler.toml`. Set `ALLOWED_ORIGIN` to the GitHub site's origin, e.g. `https://nr-sbe.github.io` (no repository path or trailing slash).
+Copy the returned database ID into `wrangler.toml`. The dashboard and API share the Worker origin; no CORS allowlist is needed.
 
 ```sh
 pnpm db:remote
@@ -28,15 +28,16 @@ In Resend, create an API key that can retrieve received emails. Store it only as
 pnpm exec wrangler secret put RESEND_API_KEY
 ```
 
-Do not paste keys into chat, commit them, or put them in frontend environment variables. Only `VITE_API_BASE_URL` is public.
+Do not commit keys or put them in frontend environment variables. Also provision the encrypted `DASHBOARD_PASSWORD` and independent random `DASHBOARD_SESSION_KEY` secrets; see [password administration](PASSWORD.md).
 
 Deploy the Worker initially with no active sources:
 
 ```sh
+pnpm build
 pnpm worker:deploy
 ```
 
-Record the resulting `https://shared-mail.<account>.workers.dev` URL. The service can return an empty feed until sources are configured. Confirm `/api/health` returns `ok: true`.
+Record the resulting `https://shared-mail.<account>.workers.dev` URL. Confirm that a password is required, `/api/messages` returns 401 without a session, and `/api/health` returns `ok: true`.
 
 ## 3. Connect Resend
 
@@ -83,19 +84,13 @@ Upload the updated complete `SOURCES_JSON` secret again. Activation records the 
 
 Repeat for all 3–4 sources. Source labels and active status are backend settings; keyword rules remain in each Gmail account.
 
-## 6. Publish on GitHub Pages
+## 6. Publish the GitHub redirect
 
 Create the public repository `shared-mail-dashboard` in your GitHub account and push this source to `main`. Do not include `.env.local`, `.dev.vars`, `sources.local.json`, or real email fixtures.
 
-In repository Settings → Secrets and variables → Actions → Variables, add:
+Update `github-pages/index.html` to point to the protected Worker address. In Settings → Pages, select **GitHub Actions** as the build source. Run **Publish dashboard** from the Actions tab (or push a code change). The workflow tests, builds, and publishes only this redirect, so existing bookmarks open the protected inbox.
 
-```text
-VITE_API_BASE_URL = https://shared-mail.<account>.workers.dev
-```
-
-In Settings → Pages, select **GitHub Actions** as the build source. Run **Publish dashboard** from the Actions tab (or push a code change). The workflow runs tests, builds, and deploys. The public URL will be `https://<username>.github.io/shared-mail-dashboard/`.
-
-The repository variable contains only a public backend URL. No Resend or Cloudflare credentials are required by the Pages workflow. Backend deployment is separately performed by the authenticated administrator.
+No Resend, password, or Cloudflare credentials are required by the Pages workflow. Frontend and backend deployment to Cloudflare is separately performed by the authenticated administrator after `pnpm build`.
 
 ## 7. Live acceptance check
 

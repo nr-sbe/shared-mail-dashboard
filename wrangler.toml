@@ -5,8 +5,10 @@ compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 
-[vars]
-ALLOWED_ORIGIN = "https://nr-sbe.github.io"
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
 
 [[d1_databases]]
 binding = "DB"

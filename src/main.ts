@@ -2,7 +2,6 @@ import './style.css';
 import type { Feed, Message } from './types';
 
 const demo = import.meta.env.VITE_DEMO === 'true';
-const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 const icons = {
   mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg>',
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>',
@@ -18,13 +17,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="sidebar-bottom"><div class="history-icon">72<span>h</span></div><div><strong>A little less inbox.</strong><p>Only the last three days.<br>Always in one place.</p></div></div>
   </aside>
   <main id="main">
-    <header class="page-header"><div><div class="eyebrow">ONE SHARED VIEW</div><h1>Inbox</h1><p class="subtitle">The emails that matter, together.</p></div><div class="header-meta"><span class="public-badge">Public view</span><span class="retention-label">Last 72 hours</span></div></header>
+    <header class="page-header"><div><div class="eyebrow">ONE SHARED VIEW</div><h1>Inbox</h1><p class="subtitle">The emails that matter, together.</p></div><div class="header-meta"><span class="public-badge">Private view</span><form id="logout" action="/logout" method="post"><button class="sign-out" type="submit">Sign out</button></form></div></header>
     <div id="demo-notice" class="notice demo-notice" hidden>Sample preview — these are fictional emails. Live mail is not connected.</div>
     <div class="toolbar"><label class="search">${icons.search}<span class="sr-only">Search emails</span><input id="search" type="search" placeholder="Search messages…" autocomplete="off" /></label><label class="mobile-source"><span class="sr-only">Filter by source</span><select id="source-select"><option value="">All sources</option></select></label><button id="refresh" class="refresh" aria-label="Refresh">${icons.refresh}<span>Refresh</span></button></div>
     <div class="feed-meta"><span id="results-count">Loading messages…</span><span id="sync-status" role="status" aria-live="polite">Connecting</span></div>
     <div id="error" class="notice error-notice" role="alert" hidden></div>
     <div class="mail-workspace"><section class="message-list" aria-label="Messages"><div id="messages"></div></section><section class="reader" aria-label="Selected message"><button id="back" class="back">← Back to messages</button><div id="reading-pane"></div></section></div>
-    <footer>Original emails stay in Gmail.<span>Shared view · No sign-in needed</span></footer>
+    <footer>Original emails stay in Gmail.<span>Password protected · Last 72 hours</span></footer>
   </main>`;
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -39,6 +38,22 @@ let lastSync: Date | null = null;
 let clockOffset = 0;
 let expiryTimer: ReturnType<typeof setTimeout> | undefined;
 let demoData: Feed | undefined;
+let sessionTimer: ReturnType<typeof setTimeout> | undefined;
+let sessionExpiresAt = 0;
+let locked = false;
+
+function clearPrivateView() {
+  locked = true;
+  feed = { messages: [], sources: [], serverTime: new Date().toISOString() };
+  selectedId = ''; sourceId = ''; query = ''; demoData = undefined;
+  clearTimeout(expiryTimer); clearTimeout(sessionTimer);
+  document.querySelector('#app')?.replaceChildren();
+}
+
+function lock() {
+  clearPrivateView();
+  window.location.replace('/login');
+}
 
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
   const n = document.createElement(tag); n.className = className;
@@ -164,7 +179,7 @@ function validFeed(data: unknown): data is Feed {
 }
 
 async function refresh() {
-  if (busy) return;
+  if (busy || locked) return;
   busy = true; el<HTMLButtonElement>('refresh').disabled = true;
   el('sync-status').textContent = 'Refreshing…';
   try {
@@ -173,34 +188,63 @@ async function refresh() {
       demoData ??= (await import('./demo')).demoFeed();
       data = { ...demoData, serverTime: new Date().toISOString() };
     } else {
-      if (!apiBase) throw new Error('The shared inbox is not connected yet. The administrator needs to finish setup.');
-      const response = await fetch(`${apiBase}/api/messages`, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
+      const response = await fetch('/api/messages', { cache: 'no-store', credentials: 'same-origin', signal: AbortSignal.timeout(12000) });
+      if (response.status === 401) { lock(); return; }
       if (!response.ok) throw new Error('Could not refresh mail. Please try again shortly.');
       data = await response.json();
     }
     if (!validFeed(data)) throw new Error('The inbox returned an unexpected response. Please try again.');
+    if (locked) return;
     clockOffset = Date.parse(data.serverTime) - Date.now();
+    if (!demo) {
+      if (!Number.isFinite(data.sessionExpiresAt)) { lock(); return; }
+      sessionExpiresAt = data.sessionExpiresAt!;
+      clearTimeout(sessionTimer);
+      sessionTimer = setTimeout(lock, Math.max(0, sessionExpiresAt - (Date.now() + clockOffset)));
+    }
     feed = data; loaded = true; connectionFailed = false; lastSync = new Date();
     if (sourceId && !feed.sources.some(s => s.id === sourceId)) sourceId = '';
     el('error').hidden = true;
     el('sync-status').textContent = `Updated ${lastSync.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · Auto-refresh on`;
   } catch (error) {
+    if (locked) return;
     connectionFailed = true;
     el('error').textContent = error instanceof Error ? error.message : 'Could not refresh mail.';
     el('error').hidden = false;
     el('sync-status').textContent = lastSync ? `Refresh failed · Last updated ${lastSync.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'Not connected';
   } finally {
-    busy = false; el<HTMLButtonElement>('refresh').disabled = false; render();
+    busy = false;
+    if (!locked) { el<HTMLButtonElement>('refresh').disabled = false; render(); }
   }
 }
 
 el('demo-notice').hidden = !demo;
+el('logout').hidden = demo;
+el('logout').addEventListener('submit', async event => {
+  event.preventDefault();
+  clearPrivateView();
+  try {
+    const response = await fetch('/logout', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(12000) });
+    if (!response.ok) throw new Error('Sign-out failed');
+    window.location.replace('/login');
+  } catch {
+    const retry = node('button', 'sign-out', 'Connection lost. Reconnect, reopen the dashboard, and sign out again.');
+    retry.addEventListener('click', () => window.location.reload());
+    document.querySelector('#app')?.append(retry);
+  }
+});
 el<HTMLInputElement>('search').addEventListener('input', event => { query = (event.target as HTMLInputElement).value; render(); });
 el<HTMLSelectElement>('source-select').addEventListener('change', event => { sourceId = (event.target as HTMLSelectElement).value; render(); });
 el('all-mail').addEventListener('click', () => { sourceId = ''; render(); });
 el('refresh').addEventListener('click', refresh);
 el('back').addEventListener('click', () => { document.body.classList.remove('reader-open'); Array.from(el('messages').querySelectorAll<HTMLButtonElement>('button')).find(b => b.dataset.message === selectedId)?.focus(); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); void refresh(); } });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !locked) {
+    if (!demo && sessionExpiresAt && Date.now() + clockOffset >= sessionExpiresAt) { lock(); return; }
+    render(); void refresh();
+  }
+});
+window.addEventListener('pageshow', event => { if (event.persisted && !demo) { clearPrivateView(); window.location.reload(); } });
 window.addEventListener('online', refresh);
 setInterval(() => { if (!document.hidden) void refresh(); }, 60000);
 void refresh();

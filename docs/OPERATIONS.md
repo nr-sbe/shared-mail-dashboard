@@ -4,7 +4,7 @@
 
 - The browser refreshes every minute while visible, when reopened, and when Refresh is clicked.
 - Search, source selection, and the open message survive refreshes. Expired messages disappear even if the next refresh fails.
-- Opening a message does not mark it read for other viewers. There are no shared mutations from the public site.
+- Opening a message does not mark it read for other viewers. The password-protected dashboard does not let viewers change mail or source settings.
 - Messages are shown as text. Images, tracking pixels, scripts, forms, and attachments do not load.
 - Resend stores incoming email independently; the application fetches body data but does not download attachments. Provider retention is separate from the rolling 72-hour dashboard.
 
@@ -46,11 +46,11 @@ Keep all services on free plans. View usage in their normal dashboards; do not e
 
 ## Updates and recovery
 
-- Frontend: a push to `main` builds and publishes via GitHub Actions. Changing `VITE_API_BASE_URL` requires rerunning that workflow.
-- Backend: run `pnpm test`, `pnpm build`, `pnpm worker:check`, then `pnpm worker:deploy` using the administrator's Cloudflare session.
+- Frontend and backend: run `pnpm test`, `pnpm build`, `pnpm worker:check`, then `pnpm worker:deploy` using the administrator's Cloudflare session. The same Worker serves both.
+- GitHub Pages publishes only a redirect to the protected dashboard. Pushing to GitHub does not deploy the Worker.
 - Database changes: add a numbered migration, test locally, then run `pnpm db:remote` before deploying dependent code.
 - Keep ignored `sources.local.json` in a private administrator backup. Keep account recovery information and secret recovery in your normal password manager.
-- To roll back frontend code, revert the relevant commit. For the backend, use Cloudflare's deployment rollback after checking database compatibility.
+- To roll back, use a compatible deployment that includes password protection. Never restore the earlier public Worker. See [password administration](PASSWORD.md).
 
 ## Live validation remains separate
 

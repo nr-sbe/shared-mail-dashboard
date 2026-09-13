@@ -1,12 +1,15 @@
 import { Resend } from 'resend';
 import { isSetupMessage, parseSources, readableBody, RETENTION_MS } from './core';
+import { authenticate, loginPage, loginScript, logout, session } from './auth';
 
 interface Env {
   DB: D1Database;
   RESEND_API_KEY: string;
   RESEND_WEBHOOK_SECRET: string;
   SOURCES_JSON: string;
-  ALLOWED_ORIGIN: string;
+  DASHBOARD_PASSWORD: string;
+  DASHBOARD_SESSION_KEY: string;
+  ASSETS: Fetcher;
 }
 
 interface Row {
@@ -94,18 +97,27 @@ async function receive(request: Request, env: Env): Promise<Response> {
 async function route(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   if (url.pathname === '/webhooks/resend' && request.method === 'POST') return receive(request, env);
+  if (url.pathname === '/login' && request.method === 'POST') return authenticate(request, env);
+  if (url.pathname === '/logout' && request.method === 'POST') return logout(request, env);
   if (request.method !== 'GET') return json({ error: 'Method not allowed.' }, 405);
+  if (url.pathname === '/login.js') return loginScript();
   if (url.pathname === '/api/health') {
     await env.DB.prepare('SELECT 1').first();
     return json({ ok: true, serverTime: new Date().toISOString() });
   }
+  const expiresAt = await session(request, env);
+  if (url.pathname === '/login') return expiresAt ? new Response(null, { status: 303, headers: { Location: '/' } }) : loginPage();
+  if (!expiresAt) return url.pathname.startsWith('/api/')
+    ? json({ error: 'Sign in to view messages.' }, 401)
+    : new Response(null, { status: 303, headers: { Location: '/login' } });
+  if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
   const now = Date.now();
   const sources = parseSources(env.SOURCES_JSON).filter(s => s.active);
   const activeIds = new Set(sources.map(s => s.id));
   if (url.pathname === '/api/messages') {
     const rows = await env.DB.prepare('SELECT * FROM messages WHERE expires_at > ? ORDER BY received_at DESC, id ASC').bind(now).all<Row>();
     return json({ messages: rows.results.filter(r => activeIds.has(r.source_id)).map(message),
-      sources: sources.map(({ id, label }) => ({ id, label })), serverTime: new Date(now).toISOString() });
+      sources: sources.map(({ id, label }) => ({ id, label })), serverTime: new Date(now).toISOString(), sessionExpiresAt: expiresAt });
   }
   if (url.pathname.startsWith('/api/messages/')) {
     const id = decodeURIComponent(url.pathname.slice('/api/messages/'.length));
@@ -127,10 +139,13 @@ export default {
       }
     }
     const headers = new Headers(response.headers);
-    // CORS is browser compatibility, not authentication: the read API is public.
-    if (request.headers.get('Origin') === env.ALLOWED_ORIGIN) headers.set('Access-Control-Allow-Origin', env.ALLOWED_ORIGIN);
-    headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    headers.set('Vary', 'Origin');
+    // Dashboard and API share one origin. No cross-origin read access is granted.
+    headers.set('Cache-Control', 'no-store');
+    headers.set('X-Content-Type-Options', 'nosniff');
+    headers.set('X-Robots-Tag', 'noindex, nofollow');
+    headers.set('Referrer-Policy', 'no-referrer');
+    headers.set('X-Frame-Options', 'DENY');
+    headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     return new Response(response.body, { status: response.status, headers });
   },
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
@@ -138,6 +153,8 @@ export default {
     await env.DB.batch([
       env.DB.prepare('DELETE FROM messages WHERE expires_at <= ?').bind(now),
       env.DB.prepare('DELETE FROM removed_messages WHERE expires_at <= ?').bind(now),
+      env.DB.prepare('DELETE FROM auth_sessions WHERE expires_at <= ?').bind(now),
+      env.DB.prepare('DELETE FROM login_attempts WHERE expires_at <= ?').bind(now),
     ]);
   },
 } satisfies ExportedHandler<Env>;

@@ -1,10 +1,10 @@
 # Shared Mail
 
-A public, searchable view of selected emails from several Gmail accounts. The dashboard keeps the last 72 hours, refreshes every minute, and shows message text without attachments. Gmail owners decide what appears using their own sender/keyword filters.
+A password-protected, searchable view of selected emails from several Gmail accounts. The dashboard keeps the last 72 hours, refreshes every minute, and shows message text without attachments. Gmail owners decide what appears using their own sender/keyword filters.
 
 ## Architecture
 
-Gmail filters → Resend receiving address → Cloudflare Worker + D1 → GitHub Pages.
+Gmail filters → Resend receiving address → Cloudflare Worker + D1 → protected dashboard on the same Worker. GitHub Pages redirects existing bookmarks to the protected dashboard.
 
 The repository contains application code only. Live email contents, receiving addresses, API keys, and forwarding-verification messages do not belong in Git.
 
@@ -19,7 +19,7 @@ pnpm dev:demo
 
 The sample preview is visibly labeled and uses fictional messages. The regular `pnpm dev` and production builds never silently substitute sample messages for live mail.
 
-To use a deployed backend, copy `.env.example` to `.env.local`, set `VITE_API_BASE_URL`, and run `pnpm dev`. Set the backend `ALLOWED_ORIGIN` to `http://localhost:5173` during local integration testing, then restore the GitHub origin before deployment.
+For local integration, copy `.dev.vars.example` to `.dev.vars`, use fictional local credentials and source data, run `pnpm db:local`, then `pnpm build` and `pnpm worker:dev`. The frontend and API use the same origin. Production credentials never belong in Vite variables or browser storage.
 
 ```sh
 pnpm test
@@ -35,7 +35,7 @@ pnpm worker:check
 
 Use GitHub Free with a public code repository, Resend Free, and Cloudflare Workers Free/D1. Use their supplied addresses and do not enable paid subscriptions or trials. Free-provider quotas and availability can change. If a free limit is reached, service may pause; this design does not authorize paid upgrades.
 
-The site and read API are public. `noindex` discourages search indexing but is not access control. Only forward emails suitable for public viewing. Anyone can copy a published message, so dashboard expiry cannot recall other people's copies.
+The site and read API require a shared password. Server-side sessions last seven days and use Secure, HttpOnly cookies. Login attempts are limited to ten per network address per ten-minute window. Changing the password invalidates existing sessions. Anyone who knows the password can share it or copy a message; dashboard expiry cannot recall saved copies. See [password administration](docs/PASSWORD.md).
 
 ## Retention
 

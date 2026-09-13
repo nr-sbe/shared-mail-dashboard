@@ -12,4 +12,5 @@ export interface Feed {
   messages: Message[];
   sources: { id: string; label: string }[];
   serverTime: string;
+  sessionExpiresAt?: number;
 }
