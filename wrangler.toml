@@ -20,5 +20,4 @@ crons = ["0 * * * *"]
 [observability]
 enabled = true
 
-[limits]
-cpu_ms = 10
+# The Free plan enforces its own CPU limit; configurable limits require Paid.
